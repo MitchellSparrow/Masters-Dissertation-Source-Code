@@ -141,13 +141,70 @@ def new_grip(target_grip):
         con.send(watchdog)
 
 
+def go_home():
+    print("\tMoving to home position")
+    new_move(home_pos)
+
+
+def squeeze():
+    print("\tMoving to above grip position")
+    new_move(above_grip_pos)
+    print("\tMoving to grip position")
+    new_move(grip_pos)
+    print("\tOpen grip")
+    new_grip(1)
+    print("\tClose grip")
+    new_grip(0)
+    print("\tOpen grip")
+    new_grip(1)
+    print("\tClose grip")
+    new_grip(0)
+    print("\tOpen grip")
+    new_grip(1)
+    print("\tMoving to above grip position")
+    new_move(above_grip_pos)
+
+
+def shake():
+    print("\tMoving to above grip position")
+    new_move(above_grip_pos)
+    print("\tMoving to grip position")
+    new_move(grip_pos)
+    print("\tClose grip")
+    new_grip(0)
+    print("\tMoving to above grip position")
+    new_move(above_grip_pos)
+    print("\tMoving to shake 1 position")
+    new_move(shake_1_pos)
+    print("\tMoving to shake 2 position")
+    new_move(shake_2_pos)
+    print("\tMoving to shake 1 position")
+    new_move(shake_1_pos)
+    print("\tMoving to shake 2 position")
+    new_move(shake_2_pos)
+    print("\tMoving to above grip position")
+    new_move(above_grip_pos)
+    print("\tMoving to grip position")
+    new_move(grip_pos)
+    print("\tOpen grip")
+    new_grip(1)
+    print("\tMoving to above grip position")
+    new_move(above_grip_pos)
+
+
 try:
     while keep_running:
-        state = con.receive()
-        actual_pose = [round(p, 4) for p in state.target_TCP_pose]
-        print(actual_pose)
+        # state = con.receive()
+        # actual_pose = [round(p, 4) for p in state.target_TCP_pose]
+        # print(actual_pose)
 
-        # print("STARTING PROGRAM")
+        print("STARTING PROGRAM")
+        go_home()
+        squeeze()
+        shake()
+        go_home()
+        print("PROGRAM FINISHED")
+
         # print("\tMoving to home position")
         # new_move(home_pos)
         # print("\tMoving to above grip position")
@@ -184,7 +241,6 @@ try:
         # new_grip(1)
         # print("\tMoving to above grip position")
         # new_move(above_grip_pos)
-        # print("PROGRAM FINISHED")
 
 
 except KeyboardInterrupt:
