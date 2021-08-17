@@ -1,11 +1,3 @@
-# CVBpy Example Script
-#
-# 1. Open the CVMock.vin driver.
-# 2. Asynchronously acquire images.
-# 3. Measure the frame rate and print results.
-#
-# Note: can be extended to multible cameras.
-
 import os
 import asyncio
 import cvb
@@ -48,13 +40,11 @@ async def async_acquire(port):
             image, status = result.value
             rate_counter.step()
             if status == cvb.WaitStatus.Ok:
-                # print("Buffer index: " + str(image.buffer_index) +
-                #       " from stream: " + str(port))
 
                 image_np = cvb.as_array(image, copy=False)
 
-                cv2.imshow('Port ' + str(port),  cv2.resize(
-                    image_np, (700, 500)))
+                cv2.imshow('Port ' + str(port),
+                           cv2.resize(image_np, (700, 500)))
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     cv2.destroyAllWindows()
@@ -65,45 +55,14 @@ async def async_acquire(port):
                                    if status == cvb.WaitStatus.Timeout else
                                    "acquisition aborted")
 
-        stream.abort()
+        stream.try_abort()
 
-        # try:
-        #     while True:
 
-        #         image, status = stream.wait()
+def main_loop():
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(asyncio.gather(async_acquire(0), async_acquire(1)))
+    loop.close()
 
-        #         if status == cvb.WaitStatus.Ok:
-        #             # np_image = cvb.as_array(image, copy=False)
-        #             # cv2.imshow('Network Camera',  cv2.resize(
-        #             #     np_image, (800, 600)))
-        #             #image_np = np.array(frame)
-        #             image_np = cvb.as_array(image, copy=False)
 
-        #             cv2.imshow('Port ' + str(port),  cv2.resize(
-        #                 image_np, (800, 600)))
-
-        #             if cv2.waitKey(1) & 0xFF == ord('q'):
-        #                 cv2.destroyAllWindows()
-        #                 break
-
-        #         else:
-        #             raise RuntimeError("timeout during wait"
-        #                                if status == cvb.WaitStatus.Timeout else
-        #                                "acquisition aborted")
-        # except KeyboardInterrupt:
-        #     stream.try_abort()
-
-        # finally:
-        #     stream.try_abort()
-
-watch = cvb.StopWatch()
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(asyncio.gather(
-    async_acquire(0), async_acquire(1)))
-loop.close()
-
-duration = watch.time_span
-
-print("Acquired on port 0 with " + str(rate_counter.rate) + " fps")
-print("Overall measurement time: " + str(duration / 1000) + " seconds")
+# Run main loop
+main_loop()
