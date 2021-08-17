@@ -4,11 +4,31 @@ import cvb
 import cvb.ui
 
 
-from PySide2.QtCore import QObject, QUrl
+from PySide2.QtCore import QUrl
 from PySide2.QtQml import qmlRegisterType
-from PySide2.QtWidgets import QApplication, QWidget
-from PySide2.QtQuick import QQuickView, QQuickPaintedItem
+from PySide2.QtWidgets import QApplication
+from PySide2.QtQuick import QQuickView
 from PySide2.QtGui import QIcon
+
+FPS = 25
+CAMERA_WIDTH = 1920
+CAMERA_HEIGHT = 1080
+CAMERA_VERTICAL_OFFSET = 0
+CAMERA_HORIZONTAL_OFFSET = 0
+frameSize = (1920, 1080)
+
+
+def configure_device(device: cvb.Device) -> None:
+    dnode = device.node_maps['Device']
+    dnode['Cust::autoBrightnessMode'].value = 'Active'  # Can be Off
+    dnode['Std::BalanceWhiteAuto'].value = 'OnDemand'
+    #dnode['Std::AcquisitionFrameRate'].value = FPS
+    #dnode['Std::Width'].value = CAMERA_WIDTH
+    #dnode['Std::Height'].value = CAMERA_HEIGHT
+    #dnode['Std::OffsetX'].value = CAMERA_HORIZONTAL_OFFSET
+    #dnode['Std::OffsetY'].value = CAMERA_VERTICAL_OFFSET
+    #dnode['Std::TriggerMode'].value = 'Off'
+    #dnode['Std::GevSCPSPacketSize'].value = 8192
 
 
 if __name__ == "__main__":
@@ -29,7 +49,9 @@ if __name__ == "__main__":
     # load the device
     driver = os.path.join(cvb.install_path(), 'Drivers', 'GenICam.vin')
     print(cvb.install_path())
-    device = cvb.DeviceFactory.open(driver, port=0)
+    device = cvb.DeviceFactory.open(driver, port=1)
+
+    configure_device(device)
 
     # device = cvb.DeviceFactory.open(
     #     os.path.join(cvb.install_path(), "drivers", "CVMock.vin"),
@@ -40,7 +62,6 @@ if __name__ == "__main__":
     handler = cvb.SingleStreamHandler(device.stream())
     # create an image controller to interact with the UI
     image_controller = cvb.ui.ImageController()
-
     # register the display component with QML
     cvb.ui.ImageViewItem.register()
 

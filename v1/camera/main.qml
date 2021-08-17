@@ -6,7 +6,6 @@ Rectangle {
     id: page
     width: 320; height: 480
     color: "lightgray"
-
     
 
     CvbQuick.ImageView
