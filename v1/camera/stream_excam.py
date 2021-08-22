@@ -10,7 +10,7 @@ from PySide2.QtWidgets import QApplication
 from PySide2.QtQuick import QQuickView
 from PySide2.QtGui import QIcon
 
-FPS = 25
+FPS = 20
 CAMERA_WIDTH = 1920
 CAMERA_HEIGHT = 1080
 CAMERA_VERTICAL_OFFSET = 0
