@@ -3,6 +3,8 @@ import cvb
 import cv2
 import os
 import numpy as np
+from globals import *
+import cv2.aruco as aruco
 
 FPS = 25
 CAMERA_WIDTH = 1920
@@ -34,6 +36,22 @@ driver = os.path.join(cvb.install_path(), 'Drivers', 'GenICam.vin')
 # # load the correct device
 # device = cvb.DeviceFactory.open(driver, port=0)
 
+
+def findArucoMarkers(img, markerSize=MARKER_SIZE, totalMarkers=50, draw=True):
+    #img2 = np.array(img)
+    #cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    key = getattr(aruco, f'DICT_{markerSize}X{markerSize}_{totalMarkers}')
+    arucoDict = aruco.Dictionary_get(key)
+    arucoParam = aruco.DetectorParameters_create()
+    bboxs, ids, rejected = aruco.detectMarkers(
+        gray, arucoDict, parameters=arucoParam)
+
+    if draw:
+        aruco.drawDetectedMarkers(img, bboxs)
+    return [bboxs, ids]
+
+
 with cvb.DeviceFactory.open(driver, port=0) as device:
 
     configure_device(device)
@@ -53,6 +71,7 @@ with cvb.DeviceFactory.open(driver, port=0) as device:
                 #image_np = np.array(frame)
                 image_np = cvb.as_array(image, copy=False)
                 #image_np = np.array(image)
+                findArucoMarkers(image_np)
 
                 cv2.imshow('Network Camera',  cv2.resize(
                     image_np, (800, 600)))

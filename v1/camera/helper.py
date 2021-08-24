@@ -19,7 +19,9 @@ def configure_device(device: cvb.Device) -> None:
 
 
 def findArucoMarkers(img, markerSize=MARKER_SIZE, totalMarkers=50, draw=True):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    #img2 = np.array(img)
+    #cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     key = getattr(aruco, f'DICT_{markerSize}X{markerSize}_{totalMarkers}')
     arucoDict = aruco.Dictionary_get(key)
     arucoParam = aruco.DetectorParameters_create()
