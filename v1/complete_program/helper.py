@@ -117,3 +117,103 @@ def arucoAug(arucofound, img, drawId=True):
 
         return out
     return img
+
+# Robot controls
+
+
+def setp_to_list(setp):
+    list = []
+    for i in range(0, 6):
+        list.append(setp.__dict__["input_double_register_%i" % i])
+    return list
+
+
+def list_to_setp(setp, list):
+    for i in range(0, 6):
+        setp.__dict__["input_double_register_%i" % i] = list[i]
+    return setp
+
+
+# Wait and run
+def new_move(con, watchdog, setp, target):
+
+    target_pose = [round(p, 4) for p in target]
+    list_to_setp(setp, target_pose)
+    con.send(setp)
+
+    while True:
+        # receive the current state
+        state = con.receive()
+        actual_pose = [round(p, 4) for p in state.target_TCP_pose]
+
+        if state is None or actual_pose == target_pose:
+            break
+
+        con.send(watchdog)
+
+
+def new_grip(con, watchdog, setg, target_grip):
+
+    setg.__dict__["input_int_register_1"] = target_grip
+    con.send(setg)
+
+    while True:
+        # receive the current state
+        state = con.receive()
+        actual_grip = state.output_int_register_1
+
+        if state is None or actual_grip == target_grip:
+            break
+
+        con.send(watchdog)
+
+
+def go_home(con, watchdog, setp):
+    print("\tMoving to home position")
+    new_move(con, watchdog, setp, home_pos)
+
+
+def squeeze(con, watchdog, setp, setg):
+    print("\tMoving to above grip position")
+    new_move(con, watchdog, setp, above_grip_pos)
+    print("\tMoving to grip position")
+    new_move(con, watchdog, setp, grip_pos)
+    print("\tOpen grip")
+    new_grip(con, watchdog, setg, 1)
+    print("\tClose grip")
+    new_grip(con, watchdog, setg, 0)
+    print("\tOpen grip")
+    new_grip(con, watchdog, setg, 1)
+    print("\tClose grip")
+    new_grip(con, watchdog, setg, 0)
+    print("\tOpen grip")
+    new_grip(con, watchdog, setg, 1)
+    print("\tMoving to above grip position")
+    new_move(con, watchdog, setp, above_grip_pos)
+
+
+def shake(con, watchdog, setp, setg):
+    print("\tMoving to above grip position")
+    new_move(con, watchdog, setp, above_grip_pos)
+    print("\tMoving to grip position")
+    new_move(con, watchdog, setp, grip_pos)
+    print("\tClose grip")
+    new_grip(con, watchdog, setg, 0)
+    print("\tMoving to above grip position")
+    new_move(con, watchdog, setp, above_grip_pos)
+    print("\tMoving to shake 1 position")
+    new_move(con, watchdog, setp, shake_1_pos)
+    print("\tMoving to shake 2 position")
+    new_move(con, watchdog, setp, shake_2_pos)
+    print("\tMoving to shake 1 position")
+    new_move(con, watchdog, setp, shake_1_pos)
+    print("\tMoving to shake 2 position")
+    new_move(con, watchdog, setp, shake_2_pos)
+    print("\tMoving to above grip position")
+    new_move(con, watchdog, setp, above_grip_pos)
+    print("\tMoving to grip position")
+    new_move(con, watchdog, setp, grip_pos)
+    print("\tOpen grip")
+    new_grip(con, watchdog, setg, 1)
+    print("\tMoving to above grip position")
+    new_move(con, watchdog, setp, above_grip_pos)

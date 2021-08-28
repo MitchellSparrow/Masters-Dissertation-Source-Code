@@ -2,3 +2,8 @@ Real-Time Data Exchange (RTDE) python client + examples
 
 rtde - main RTDE library
 examples - Examples showing basic use cases for the RTDE
+
+
+# Remote server connection:
+
+https://stackoverflow.com/questions/20499074/run-local-python-script-on-remote-server
