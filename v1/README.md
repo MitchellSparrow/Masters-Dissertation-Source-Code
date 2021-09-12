@@ -22,4 +22,4 @@ setInterval(ClickConnect,60000)
 
 # Multiprocessing and multithread sources
 
-#https://stackoverflow.com/questions/34764535/why-cant-matplotlib-plot-in-a-different-thread
+https://stackoverflow.com/questions/34764535/why-cant-matplotlib-plot-in-a-different-thread
