@@ -3,6 +3,7 @@ import cv2.aruco as aruco
 import numpy as np
 from globals import *
 import cvb
+import time
 
 
 def find_contours(image):
@@ -20,10 +21,10 @@ def configure_device(device: cvb.Device) -> None:
     dnode['Cust::autoBrightnessMode'].value = AUTO_BRIGHTNESS
     dnode['Std::BalanceWhiteAuto'].value = BALANCE_WHITE
     dnode['Std::AcquisitionFrameRate'].value = FPS
-    #dnode['Std::Width'].value = CAMERA_WIDTH
-    #dnode['Std::Height'].value = CAMERA_HEIGHT
-    # dnode['Std::OffsetX'].value = CAMERA_HORIZONTAL_OFFSET
-    # dnode['Std::OffsetY'].value = CAMERA_VERTICAL_OFFSET
+    dnode['Std::Width'].value = CAMERA_WIDTH
+    dnode['Std::Height'].value = CAMERA_HEIGHT
+    dnode['Std::OffsetX'].value = CAMERA_HORIZONTAL_OFFSET
+    dnode['Std::OffsetY'].value = CAMERA_VERTICAL_OFFSET
     dnode['Std::TriggerMode'].value = 'Off'
     # dnode['Std::GevSCPSPacketSize'].value = 8192
 
@@ -140,8 +141,16 @@ def new_move(con, watchdog, setp, target):
     target_pose = [round(p, 4) for p in target]
     list_to_setp(setp, target_pose)
     con.send(setp)
+    start_time = time.time()
 
     while True:
+
+        current_time = time.time()
+        elapsed_time = current_time - start_time
+
+        if elapsed_time > WHILE_LOOP_SECONDS:
+            print("Could not reach position")
+            break
         # receive the current state
         state = con.receive()
         actual_pose = [round(p, 4) for p in state.target_TCP_pose]
@@ -157,7 +166,16 @@ def new_grip(con, watchdog, setg, target_grip):
     setg.__dict__["input_int_register_1"] = target_grip
     con.send(setg)
 
+    start_time = time.time()
+
     while True:
+
+        current_time = time.time()
+        elapsed_time = current_time - start_time
+
+        if elapsed_time > WHILE_LOOP_SECONDS:
+            print("Could not reach position")
+            break
         # receive the current state
         state = con.receive()
         actual_grip = state.output_int_register_1
@@ -168,9 +186,13 @@ def new_grip(con, watchdog, setg, target_grip):
         con.send(watchdog)
 
 
-def go_home(con, watchdog, setp):
+def go_home2(con, watchdog, setp):
     print("\tMoving to home position")
     new_move(con, watchdog, setp, home_pos)
+
+def go_home(con, watchdog, setp):
+    print("\tMoving to calibration position")
+    new_move(con, watchdog, setp, calibration_pos)
 
 
 def squeeze(con, watchdog, setp, setg):

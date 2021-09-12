@@ -9,11 +9,12 @@ from robot_imports import *
 from threading import Thread
 import uuid 
 from tensorflow import keras
-
+import time
 
 class Run:
     def __init__(self):
-        self.path_cam = 'C:/Users/mitch/Documents/Mitch Files/University/Postgrad/Dissertation/Code/Robot_Control/v1/complete_program/images2'
+        self.model = keras.models.load_model('models/my_model_2_3.h5', compile=False)
+
         self.keep_running = True
         self.calibrating = True
         self.stream_images = []
@@ -37,15 +38,17 @@ class Run:
 
         # add the display images thread
         #processes.append(Thread(target=self.save_images))
-        #processes.append(Thread(target=self.display_images))
         processes.append(Thread(target=self.display_images))
+        #processes.append(Thread(target=self.display_masked_images))
 
         # add the robot control process
-        processes.append(Thread(target=self.run_robot))
+        #processes.append(Thread(target=self.run_robot))
         
         # now start and join all the processes
         [x.start() for x in processes]
         [x.join() for x in processes]
+
+        
         
 
     def save_images(self):
@@ -67,7 +70,7 @@ class Run:
         while self.keep_running:
             cv_image = np.concatenate((self.stream_images[0], self.stream_images[1]), axis=1)
             cv2.imshow('Instance Segmentation', cv_image)
-
+            
             if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
                 cv2.destroyAllWindows()
                 self.keep_running = False
@@ -76,12 +79,14 @@ class Run:
         while self.keep_running:
             image_1 = self.get_masked_image(self.stream_images[0])
             image_2 = self.get_masked_image(self.stream_images[1])
-            cv_image = np.concatenate((image_1,image_2), axis=1)
-            cv2.imshow('Instance Segmentation', cv_image)
+            cv_image = np.concatenate((cv2.resize(image_1, (320,480)), cv2.resize(image_2, (320,480))), axis=1)
+            #cv_image = np.concatenate((image_1,image_2), axis=1)
+            cv2.imshow('Instance Segmentation', image_1)
 
             if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
                 cv2.destroyAllWindows()
                 self.keep_running = False
+
 
 
     def get_masked_image(self, image):
@@ -161,7 +166,7 @@ class Run:
         logging.getLogger().setLevel(logging.INFO)
        
 
-        conf = rtde_config.ConfigFile(CONFIG_FILENAME)
+        conf = rtde_config.ConfigFile(CONFIG_FILENAME_DEPLOY)
         state_names, state_types = conf.get_recipe('state')
         setp_names, setp_types = conf.get_recipe('setp')
         setg_names, setg_types = conf.get_recipe('setg')

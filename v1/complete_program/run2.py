@@ -9,11 +9,25 @@ from robot_imports import *
 from threading import Thread
 import uuid 
 from tensorflow import keras
+import time
+from tkinter import *
+import multiprocessing
 
 
 class Run:
     def __init__(self):
-        self.path_cam = 'C:/Users/mitch/Documents/Mitch Files/University/Postgrad/Dissertation/Code/Robot_Control/v1/complete_program/images2'
+        #self.model = keras.models.load_model('complete_program/models/my_model_2_3.h5', compile=False)
+
+        self.stream_queues = []
+
+        for i in range(NUM_CAMERAS):
+            self.stream_queues.append(multiprocessing.Queue())
+
+        # self.q_image_1 = multiprocessing.Queue()
+        # self.q_image_2 = multiprocessing.Queue()
+
+        self.exit = multiprocessing.Event()
+
         self.keep_running = True
         self.calibrating = True
         self.stream_images = []
@@ -22,30 +36,32 @@ class Run:
             self.stream_images.append(np.zeros((FRAME_SIZE[1],FRAME_SIZE[0],3), np.uint8))
         
         self.calibration_points = []
-        for i in range(NUM_CAMERAS):
-            self.calibration_points.append(self.calibrate_camera(i))
+        # for i in range(NUM_CAMERAS):
+        #     self.calibration_points.append(self.calibrate_camera(i))
 
     def run(self):
         # create a list of processes that we want to run at the same time
-        processes = []
-    
-        # add the camera streams as processes
-        for i in range(NUM_CAMERAS):
-            processes.append(Thread(target=self.stream_camera, args=[i,self.calibration_points[i]]))
+        #Create a queue to share data between process
         
-        # processes.append(Thread(target=self.stream_camera2, args=(0,)))
+        multiprocess = []
 
-        # add the display images thread
-        #processes.append(Thread(target=self.save_images))
-        #processes.append(Thread(target=self.display_images))
-        processes.append(Thread(target=self.display_images))
+        #Create and start the simulation process
+        # for i in range(NUM_CAMERAS):
+        #     multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[i],i,self.calibration_points[i]]))
+
+        multiprocess.append(multiprocessing.Process(None,self.stream_camera2_mp,args=[self.stream_queues[0],]))
 
         # add the robot control process
-        processes.append(Thread(target=self.run_robot))
+        #multiprocess.append(multiprocessing.Process(None,self.run_robot))
         
-        # now start and join all the processes
-        [x.start() for x in processes]
-        [x.join() for x in processes]
+        for p in multiprocess:
+            p.daemon = True
+        
+        [x.start() for x in multiprocess]
+        
+        self.model = keras.models.load_model('complete_program/models/my_model_2_3.h5', compile=False)
+        #self.display_masked_images_mp()
+        self.display_images_mp()
         
 
     def save_images(self):
@@ -67,7 +83,7 @@ class Run:
         while self.keep_running:
             cv_image = np.concatenate((self.stream_images[0], self.stream_images[1]), axis=1)
             cv2.imshow('Instance Segmentation', cv_image)
-
+            
             if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
                 cv2.destroyAllWindows()
                 self.keep_running = False
@@ -76,13 +92,41 @@ class Run:
         while self.keep_running:
             image_1 = self.get_masked_image(self.stream_images[0])
             image_2 = self.get_masked_image(self.stream_images[1])
-            cv_image = np.concatenate((image_1,image_2), axis=1)
+            cv_image = np.concatenate((cv2.resize(image_1, (320,480)), cv2.resize(image_2, (320,480))), axis=1)
+            #cv_image = np.concatenate((image_1,image_2), axis=1)
             cv2.imshow('Instance Segmentation', cv_image)
 
             if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
                 cv2.destroyAllWindows()
                 self.keep_running = False
 
+
+    def display_images_mp(self):
+        while not self.exit.is_set():
+            cv_image = np.concatenate((self.stream_queues[0].get(), self.stream_queues[0].get()), axis=1)
+            if cv_image is None:  continue             
+        
+            cv2.imshow('Instance Segmentation', cv_image)
+            
+            if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
+                cv2.destroyAllWindows()
+                self.exit.set()
+
+    def display_masked_images_mp(self):
+        while not self.exit.is_set():
+            image_1 = self.get_masked_image(self.stream_queues[0].get())
+            image_2 = self.get_masked_image(self.stream_queues[0].get())
+            cv_image = np.concatenate((image_1, image_2), axis=1)
+
+            if cv_image is None:  continue             
+        
+            cv2.imshow('Instance Segmentation', cv_image)
+            
+            if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
+                cv2.destroyAllWindows()
+                self.exit.set()
+
+            
 
     def get_masked_image(self, image):
         res = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
@@ -123,7 +167,34 @@ class Run:
             ret, frame = cap.read()
             result = self.get_masked_image(frame)
             self.stream_images[port] = result
-            
+
+    def stream_camera_mp(self,q,port,points):
+        with cvb.DeviceFactory.open(os.path.join(cvb.install_path(), "drivers", 'GenICam.vin'), port=port) as device:
+            configure_device(device)
+            stream = device.stream()
+            stream.start()
+
+            while not self.exit.is_set():
+                image, status = stream.wait()
+
+                if status == cvb.WaitStatus.Ok:
+                    image_np = cvb.as_array(image, copy=False)
+                    q.put(cv2.resize(cv2.cvtColor(transform_image(image_np, points), cv2.COLOR_RGB2BGR), FRAME_SIZE))
+                    
+                else:
+                    raise RuntimeError("timeout during wait"
+                                    if status == cvb.WaitStatus.Timeout else
+                                    "acquisition aborted")
+
+            stream.try_abort()
+
+
+    def stream_camera2_mp(self,q):
+        cap = cv2.VideoCapture(0)
+        while not self.exit.is_set():
+            ret, frame = cap.read()
+            q.put(frame)
+
 
     def calibrate_camera(self, port):
         with cvb.DeviceFactory.open(os.path.join(cvb.install_path(), "drivers", 'GenICam.vin'), port=port) as device:
@@ -161,7 +232,7 @@ class Run:
         logging.getLogger().setLevel(logging.INFO)
        
 
-        conf = rtde_config.ConfigFile(CONFIG_FILENAME)
+        conf = rtde_config.ConfigFile(CONFIG_FILENAME_DEPLOY)
         state_names, state_types = conf.get_recipe('state')
         setp_names, setp_types = conf.get_recipe('setp')
         setg_names, setg_types = conf.get_recipe('setg')

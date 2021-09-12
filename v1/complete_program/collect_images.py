@@ -9,20 +9,6 @@ from helper import *
 from robot_imports import *
 from threading import Thread
 
-import tensorflow
-from tensorflow import keras
-
-
-
-model = keras.models.load_model('models/my_model.h5', compile=False)
-
-# Check its architecture
-#print(model.summary())
-
-#y_pred=model.predict(X_test)
-
-
-
 
 async def async_acquire(port, points):
     with cvb.DeviceFactory.open(os.path.join(cvb.install_path(), "drivers", 'GenICam.vin'), port=port) as device:
@@ -42,18 +28,8 @@ async def async_acquire(port, points):
                 # res = segmentation_model.segmentFrame(img, show_bboxes=True)
                 # image_res = res[1]
 
-                res = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
-                res = np.expand_dims(res, 0)
-                print(res.shape)
-                #prediction = model.predict(res)[0,:,:,0] 
-                
-                prediction = (model.predict(res)[0,:,:,0] > 0.1).astype(np.uint8)*255
-
-                # cv2.imshow(image_name, cv2.resize(
-                #     cv2.cvtColor(img, cv2.COLOR_RGB2BGR), FRAME_SIZE))
-
                 cv2.imshow(image_name, cv2.resize(
-                    prediction, FRAME_SIZE))
+                    cv2.cvtColor(img, cv2.COLOR_RGB2BGR), FRAME_SIZE))
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
@@ -102,7 +78,7 @@ def run_robot():
 
     logging.getLogger().setLevel(logging.INFO)
 
-    conf = rtde_config.ConfigFile(config_filename)
+    conf = rtde_config.ConfigFile(CONFIG_FILENAME)
     state_names, state_types = conf.get_recipe('state')
     setp_names, setp_types = conf.get_recipe('setp')
     setg_names, setg_types = conf.get_recipe('setg')

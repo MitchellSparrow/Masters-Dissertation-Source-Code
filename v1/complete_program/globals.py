@@ -1,23 +1,31 @@
+NUM_CAMERAS = 2
 MARKER_SIZE = 6
 FPS = 10
-CAMERA_WIDTH = 1920
-CAMERA_HEIGHT = 1080
-CAMERA_VERTICAL_OFFSET = 0
-CAMERA_HORIZONTAL_OFFSET = 0
-FRAME_SIZE = (700, 500)
+CAMERA_WIDTH = 1280
+CAMERA_HEIGHT = 900
+CAMERA_VERTICAL_OFFSET = 320
+CAMERA_HORIZONTAL_OFFSET = 400
+FRAME_SIZE = (640, 480)
 
 AUTO_BRIGHTNESS = 'Active'  # can be active or off
 BALANCE_WHITE = 'OnDemand'
+
+WHILE_LOOP_SECONDS = 5
 
 
 #ROBOT_HOST = '192.168.86.128'
 ROBOT_HOST = '10.0.1.1'
 ROBOT_PORT = 30004
-config_filename = 'robot_configuration.xml'
+CONFIG_FILENAME = 'complete_program/robot_configuration.xml'
+CONFIG_FILENAME_DEPLOY = 'robot_configuration.xml'
+
+
 
 setp1 = [-0.129, -0.322, -0.05, -0.022, -1.603, -0.034]
 setp2 = [-0.25, -0.322, -0.05, -0.022, -1.603, -0.034]
 
+
+calibration_pos = [-0.068, -0.2809, 0.1961, 2.2827, 2.1357, -0.0262]
 grip_pos = [-0.25, -0.322, -0.155, -0.022, -1.603, -0.034]
 above_grip_pos = [-0.25, -0.322, -0.1, -0.022, -1.603, -0.034]
 home_pos = [-0.129, -0.322, -0.1, -0.022, -1.603, -0.034]
