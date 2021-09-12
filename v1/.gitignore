@@ -2,3 +2,4 @@ microphone/data
 complete_program/models
 camera/models
 data/
+complete_program/secrets.py

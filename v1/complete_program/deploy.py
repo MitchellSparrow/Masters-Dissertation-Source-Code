@@ -1,5 +1,6 @@
 import paramiko
 import os
+from secrets import USERNAME, PASSWORD
 
 class MySFTPClient(paramiko.SFTPClient):
     def put_dir(self, source, target):
@@ -10,6 +11,8 @@ class MySFTPClient(paramiko.SFTPClient):
         for item in os.listdir(source):
             #print(item)
             if os.path.isfile(os.path.join(source, item)):
+                # The following if condition just ensures that the model is not copied over each time
+                # The model is quite a large file therefore it takes a while to copy it over
                 if item != "my_model_2_3.h5":
                     self.put(os.path.join(source, item), '%s/%s' % (target, item))
             else:
@@ -28,8 +31,8 @@ class MySFTPClient(paramiko.SFTPClient):
 
 HOST = 'gerty.cobotmakerspace.org'
 PORT = 22
-USERNAME = 'mitchellsparrow'
-PASSWORD = 'coolcars'
+username = USERNAME
+password = PASSWORD
 
 transport = paramiko.Transport((HOST, PORT))
 transport.connect(username=USERNAME, password=PASSWORD)
