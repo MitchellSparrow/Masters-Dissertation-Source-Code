@@ -13,8 +13,10 @@ class MySFTPClient(paramiko.SFTPClient):
             if os.path.isfile(os.path.join(source, item)):
                 # The following if condition just ensures that the model is not copied over each time
                 # The model is quite a large file therefore it takes a while to copy it over
-                if item != "my_model_2_3.h5":
+                print(item)
+                if not (item == "my_model_2_3.h5" or item == "my_model_6.h5"):
                     self.put(os.path.join(source, item), '%s/%s' % (target, item))
+                
             else:
                 self.mkdir('%s/%s' % (target, item), ignore_existing=True)
                 self.put_dir(os.path.join(source, item), '%s/%s' % (target, item))

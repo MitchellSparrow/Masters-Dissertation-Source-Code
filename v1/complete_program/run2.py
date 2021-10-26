@@ -10,7 +10,6 @@ from threading import Thread
 import uuid 
 from tensorflow import keras
 import time
-from tkinter import *
 import multiprocessing
 
 
@@ -36,8 +35,8 @@ class Run:
             self.stream_images.append(np.zeros((FRAME_SIZE[1],FRAME_SIZE[0],3), np.uint8))
         
         self.calibration_points = []
-        # for i in range(NUM_CAMERAS):
-        #     self.calibration_points.append(self.calibrate_camera(i))
+        for i in range(NUM_CAMERAS):
+            self.calibration_points.append(self.calibrate_camera(i))
 
     def run(self):
         # create a list of processes that we want to run at the same time
@@ -48,20 +47,29 @@ class Run:
         #Create and start the simulation process
         # for i in range(NUM_CAMERAS):
         #     multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[i],i,self.calibration_points[i]]))
+        #     time.sleep(5)
 
-        multiprocess.append(multiprocessing.Process(None,self.stream_camera2_mp,args=[self.stream_queues[0],]))
+        multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[1],1,self.calibration_points[1]]))
+        multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[0],0,self.calibration_points[0]]))
+
+        # multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[1],1,self.calibration_points[1]]))
+        # multiprocess.append(multiprocessing.Process(None,self.stream_camera2_mp,args=[self.stream_queues[0],]))
 
         # add the robot control process
-        #multiprocess.append(multiprocessing.Process(None,self.run_robot))
+        multiprocess.append(multiprocessing.Process(None,self.run_robot))
         
         for p in multiprocess:
             p.daemon = True
+
+        for x in multiprocess:
+            x.start()
+            time.sleep(1)
         
-        [x.start() for x in multiprocess]
+        # [x.start() for x in multiprocess]
         
-        self.model = keras.models.load_model('complete_program/models/my_model_2_3.h5', compile=False)
-        #self.display_masked_images_mp()
-        self.display_images_mp()
+        self.model = keras.models.load_model('models/my_model_6.h5', compile=False)
+        self.display_masked_images_mp()
+        #self.display_images_mp()
         
 
     def save_images(self):
@@ -114,11 +122,12 @@ class Run:
 
     def display_masked_images_mp(self):
         while not self.exit.is_set():
-            image_1 = self.get_masked_image(self.stream_queues[0].get())
-            image_2 = self.get_masked_image(self.stream_queues[0].get())
+            image_1 = self.get_masked_image(self.stream_queues[1].get())
+            #image_2 = self.get_masked_image(self.stream_queues[0].get())
+            image_2 = self.stream_queues[1].get()
             cv_image = np.concatenate((image_1, image_2), axis=1)
 
-            if cv_image is None:  continue             
+            if cv_image is None: continue             
         
             cv2.imshow('Instance Segmentation', cv_image)
             
