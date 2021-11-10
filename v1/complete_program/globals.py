@@ -1,6 +1,8 @@
+import numpy as np
+
 NUM_CAMERAS = 2
 MARKER_SIZE = 6
-FPS = 5
+FPS = 10
 CAMERA_WIDTH = 1280
 CAMERA_HEIGHT = 900
 CAMERA_VERTICAL_OFFSET = 320
@@ -18,7 +20,17 @@ ROBOT_PORT = 30004
 CONFIG_FILENAME = 'complete_program/robot_configuration.xml'
 CONFIG_FILENAME_DEPLOY = 'robot_configuration.xml'
 
+## LSTM VIDEO COLLECTION PARAMETERS:
 
+SPONGE_CLASSIFICATIONS = np.array(['no_object', 'soft', 'medium', 'firm', 'very_firm'])
+# 15 videos worth of data
+NO_SEQUENCES = 15
+# Each video is 30 frames long
+SEQUENCE_LENGTH = 50
+# Threshold over which to draw sematic segmentation 
+SEM_SEG_THRESH = 0.2
+
+## ROBOT PARAMETERS
 
 setp1 = [-0.129, -0.322, -0.05, -0.022, -1.603, -0.034]
 setp2 = [-0.25, -0.322, -0.05, -0.022, -1.603, -0.034]

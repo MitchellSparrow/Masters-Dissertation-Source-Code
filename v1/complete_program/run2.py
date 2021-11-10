@@ -16,8 +16,17 @@ import multiprocessing
 class Run:
     def __init__(self):
         #self.model = keras.models.load_model('complete_program/models/my_model_2_3.h5', compile=False)
-
+        self.record = False
+        self.collect_lstm_data = True
         self.stream_queues = []
+
+        # recording data 
+        self.action = 0
+        self.sequence = 0
+        self.frame_num = 0
+
+        if self.collect_lstm_data:
+            self.setup_video_directories()
 
         for i in range(NUM_CAMERAS):
             self.stream_queues.append(multiprocessing.Queue())
@@ -98,8 +107,8 @@ class Run:
 
     def display_masked_images(self):
         while self.keep_running:
-            image_1 = self.get_masked_image(self.stream_images[0])
-            image_2 = self.get_masked_image(self.stream_images[1])
+            image_1 = self.get_masked_image(self.stream_images[0])[0]
+            image_2 = self.get_masked_image(self.stream_images[1])[0]
             cv_image = np.concatenate((cv2.resize(image_1, (320,480)), cv2.resize(image_2, (320,480))), axis=1)
             #cv_image = np.concatenate((image_1,image_2), axis=1)
             cv2.imshow('Instance Segmentation', cv_image)
@@ -122,32 +131,67 @@ class Run:
 
     def display_masked_images_mp(self):
         while not self.exit.is_set():
-            image_1 = self.get_masked_image(self.stream_queues[1].get())
-            #image_2 = self.get_masked_image(self.stream_queues[0].get())
-            image_2 = self.stream_queues[1].get()
+            image_1_result = self.get_masked_image(self.stream_queues[1].get())
+            image_1 = image_1_result[0]
+            #image_2 = self.get_masked_image(self.stream_queues[0].get())[0]
+            image_2 = self.stream_queues[1].get() 
             cv_image = np.concatenate((image_1, image_2), axis=1)
 
             if cv_image is None: continue             
+
+            if self.collect_lstm_data:
+                cv2.putText(cv_image, 'Collecting frames for {} Video Number {}'.format(SPONGE_CLASSIFICATIONS[self.action], self.sequence), (15, 12),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         
             cv2.imshow('Instance Segmentation', cv_image)
-            
+
+            if self.record:
+                if self.collect_lstm_data:
+                    self.save_video_data(image_1_result[1])
+                    
+                    if self.frame_num == SEQUENCE_LENGTH - 1:
+                        if self.sequence == NO_SEQUENCES - 1:
+                            if self.action == len(SPONGE_CLASSIFICATIONS) - 1:
+                                self.collect_lstm_data = False
+                            else:
+                                self.action += 1
+                            self.sequence = 0
+                        else:
+                            self.sequence += 1
+                        self.frame_num = 0
+                    else:
+                        self.frame_num += 1
+
+
             if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
                 cv2.destroyAllWindows()
                 self.exit.set()
 
-            
+    def setup_video_directories(self):
+        for classification in SPONGE_CLASSIFICATIONS:
+            for sequence in range(NO_SEQUENCES):
+                try:
+                    os.makedirs(os.path.join('LSTM_Data/', classification, str(sequence)))
+                except:
+                    pass
+
+    def save_video_data(self, detections):
+        npy_path = os.path.join(
+                'LSTM_Data/', SPONGE_CLASSIFICATIONS[self.action], str(self.sequence), str(self.frame_num))
+        np.save(npy_path, detections)
+        
 
     def get_masked_image(self, image):
         res = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         res = np.expand_dims(res, 0)
-        prediction = (self.model.predict(res)[0,:,:,0] > 0.1).astype(np.uint8)*255
+        prediction = (self.model.predict(res)[0,:,:,0] > SEM_SEG_THRESH).astype(np.uint8)*255
     
         redImg = np.zeros(image.shape, image.dtype)
         redImg[:,:] = (0, 0, 255)
         redMask = cv2.bitwise_and(redImg, redImg, mask=prediction)
         added_image = cv2.addWeighted(image,1.0,redMask,0.5,0)
         added_image = cv2.resize(added_image, FRAME_SIZE)
-        return added_image
+        return [added_image, prediction/255]
 
 
     def stream_camera(self, port, points):
@@ -174,7 +218,7 @@ class Run:
         cap = cv2.VideoCapture(0)
         while self.keep_running:
             ret, frame = cap.read()
-            result = self.get_masked_image(frame)
+            result = self.get_masked_image(frame)[0]
             self.stream_images[port] = result
 
     def stream_camera_mp(self,q,port,points):
@@ -282,8 +326,9 @@ class Run:
             while self.keep_running:
                 print("STARTING PROGRAM")
                 go_home(con, watchdog, setp)
+                self.record = True
                 squeeze(con, watchdog, setp, setg)
-                shake(con, watchdog, setp, setg)
+                # shake(con, watchdog, setp, setg)
                 go_home(con, watchdog, setp)
                 print("PROGRAM FINISHED")
 
