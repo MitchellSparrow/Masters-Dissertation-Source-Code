@@ -26,7 +26,7 @@ SPONGE_CLASSIFICATIONS = np.array(['no_object', 'soft', 'medium', 'firm', 'very_
 # 15 videos worth of data
 NO_SEQUENCES = 15
 # Each video is 30 frames long
-SEQUENCE_LENGTH = 50
+SEQUENCE_LENGTH = 20
 # Threshold over which to draw sematic segmentation 
 SEM_SEG_THRESH = 0.2
 

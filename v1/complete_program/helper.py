@@ -195,9 +195,12 @@ def go_home(con, watchdog, setp):
     new_move(con, watchdog, setp, calibration_pos)
 
 
-def squeeze(con, watchdog, setp, setg):
+def before_squeeze(con, watchdog, setp, setg):
     print("\tMoving to above grip position")
     new_move(con, watchdog, setp, above_grip_pos)
+    
+
+def squeeze(con, watchdog, setp, setg):    
     print("\tMoving to grip position")
     new_move(con, watchdog, setp, grip_pos)
     print("\tOpen grip")
@@ -210,8 +213,7 @@ def squeeze(con, watchdog, setp, setg):
     new_grip(con, watchdog, setg, 0)
     print("\tOpen grip")
     new_grip(con, watchdog, setg, 1)
-    print("\tMoving to above grip position")
-    new_move(con, watchdog, setp, above_grip_pos)
+    
 
 
 def shake(con, watchdog, setp, setg):

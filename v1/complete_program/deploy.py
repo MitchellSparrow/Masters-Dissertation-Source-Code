@@ -14,7 +14,7 @@ class MySFTPClient(paramiko.SFTPClient):
                 # The following if condition just ensures that the model is not copied over each time
                 # The model is quite a large file therefore it takes a while to copy it over
                 print(item)
-                if not (item == "my_model_2_3.h5" or item == "my_model_6.h5"):
+                if not (item == "my_model_2_3.h5" or item == "my_model_6.h5" or item == "my_model_10.h5" or item == "my_model_11.h5" or item == "my_model_13.h5"):
                     self.put(os.path.join(source, item), '%s/%s' % (target, item))
                 
             else:

@@ -16,7 +16,7 @@ import multiprocessing
 class Run:
     def __init__(self):
         #self.model = keras.models.load_model('complete_program/models/my_model_2_3.h5', compile=False)
-        self.record = False
+        self.record = multiprocessing.Event()
         self.collect_lstm_data = True
         self.stream_queues = []
 
@@ -76,7 +76,7 @@ class Run:
         
         # [x.start() for x in multiprocess]
         
-        self.model = keras.models.load_model('models/my_model_6.h5', compile=False)
+        self.model = keras.models.load_model('models/my_model_10.h5', compile=False)
         self.display_masked_images_mp()
         #self.display_images_mp()
         
@@ -134,21 +134,21 @@ class Run:
             image_1_result = self.get_masked_image(self.stream_queues[1].get())
             image_1 = image_1_result[0]
             #image_2 = self.get_masked_image(self.stream_queues[0].get())[0]
-            image_2 = self.stream_queues[1].get() 
+            image_2 = self.stream_queues[1].get()
             cv_image = np.concatenate((image_1, image_2), axis=1)
 
-            if cv_image is None: continue             
+            if cv_image is None: continue
 
             if self.collect_lstm_data:
-                cv2.putText(cv_image, 'Collecting frames for {} Video Number {}'.format(SPONGE_CLASSIFICATIONS[self.action], self.sequence), (15, 12),
+                cv2.putText(cv_image, 'Collecting frames for {} Video Number {}, frame: {} Recording: {}'.format(SPONGE_CLASSIFICATIONS[self.action], self.sequence, self.frame_num, self.record.is_set()), (15, 12),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
         
             cv2.imshow('Instance Segmentation', cv_image)
 
-            if self.record:
+            if self.record.is_set(): 
                 if self.collect_lstm_data:
                     self.save_video_data(image_1_result[1])
-                    
+
                     if self.frame_num == SEQUENCE_LENGTH - 1:
                         if self.sequence == NO_SEQUENCES - 1:
                             if self.action == len(SPONGE_CLASSIFICATIONS) - 1:
@@ -159,6 +159,7 @@ class Run:
                         else:
                             self.sequence += 1
                         self.frame_num = 0
+                        self.record.clear()
                     else:
                         self.frame_num += 1
 
@@ -184,13 +185,15 @@ class Run:
     def get_masked_image(self, image):
         res = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
         res = np.expand_dims(res, 0)
+        start = time.time()
         prediction = (self.model.predict(res)[0,:,:,0] > SEM_SEG_THRESH).astype(np.uint8)*255
-    
+        end = time.time()
         redImg = np.zeros(image.shape, image.dtype)
         redImg[:,:] = (0, 0, 255)
         redMask = cv2.bitwise_and(redImg, redImg, mask=prediction)
         added_image = cv2.addWeighted(image,1.0,redMask,0.5,0)
         added_image = cv2.resize(added_image, FRAME_SIZE)
+        #print(end - start)
         return [added_image, prediction/255]
 
 
@@ -280,10 +283,9 @@ class Run:
             return points
 
 
-    def run_robot(self):
+    def run_robot(self,):
 
         logging.getLogger().setLevel(logging.INFO)
-       
 
         conf = rtde_config.ConfigFile(CONFIG_FILENAME_DEPLOY)
         state_names, state_types = conf.get_recipe('state')
@@ -326,8 +328,11 @@ class Run:
             while self.keep_running:
                 print("STARTING PROGRAM")
                 go_home(con, watchdog, setp)
-                self.record = True
+                before_squeeze(con, watchdog, setp, setg)
+                self.record.set()
                 squeeze(con, watchdog, setp, setg)
+                before_squeeze(con, watchdog, setp, setg)
+                # self.record.clear()
                 # shake(con, watchdog, setp, setg)
                 go_home(con, watchdog, setp)
                 print("PROGRAM FINISHED")
