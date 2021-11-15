@@ -10,7 +10,7 @@ from sklearn.metrics import multilabel_confusion_matrix, accuracy_score
 from sklearn.model_selection import KFold
 
 n_split = 10
-DATA_PATH = 'LSTM_Data/'
+DATA_PATH = 'LSTM_Data_test/'
 
 label_map = {label: num for num, label in enumerate(SPONGE_CLASSIFICATIONS)}
 
@@ -21,12 +21,15 @@ for action in SPONGE_CLASSIFICATIONS:
         for frame_num in range(SEQUENCE_LENGTH):
             res = np.load(os.path.join(DATA_PATH, action, str(
                 sequence), "{}.npy".format(frame_num)))
-            window.append(res)
+            window.append(res.flatten())
+            #print(res)
         sequences.append(window)
+        #print(window)
         labels.append(label_map[action])   
 
 
 X = np.array(sequences)
+print(X.shape)
 
 y = to_categorical(labels).astype(int)
 X_train, X_test, Y_train, Y_test = train_test_split(X, y, test_size=0.2)
@@ -38,7 +41,7 @@ tb_callback = TensorBoard(log_dir=log_dir)
 def create_model():
     model = Sequential()
     model.add(LSTM(64, return_sequences=True,
-                   activation='relu', input_shape=(SEQUENCE_LENGTH, FRAME_SIZE)))
+                   activation='relu', input_shape=(SEQUENCE_LENGTH, 480*640)))
     model.add(LSTM(128, return_sequences=True, activation='relu'))
     model.add(LSTM(64, return_sequences=False, activation='relu'))
     model.add(Dense(64, activation='relu'))
@@ -72,7 +75,7 @@ for train_index, test_index in KFold(n_split, shuffle=True).split(X_train):
     y_train, y_test = Y_train[train_index], Y_train[test_index]
 
     model = create_model()
-    model.fit(x_train, y_train, epochs=1200)
+    model.fit(x_train, y_train, epochs=5)
 
     evaluation = model.evaluate(x_test, y_test)
     accuracy = evaluation[1]
@@ -92,7 +95,7 @@ for train_index, test_index in KFold(n_split, shuffle=True).split(X_train):
 print('\n\nBest Model Evaluation:\n\n')
 print(best_model.summary())
 
-best_model.save('cv_model_2.h5')
+best_model.save('models/lstm_model_2.h5')
 
 yhat = best_model.predict(X_test)
 ytrue = np.argmax(Y_test, axis=1).tolist()

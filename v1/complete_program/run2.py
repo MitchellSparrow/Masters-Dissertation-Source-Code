@@ -6,7 +6,6 @@ import os
 from globals import *
 from helper import *
 from robot_imports import *
-from threading import Thread
 import uuid 
 from tensorflow import keras
 import time
@@ -15,7 +14,7 @@ import multiprocessing
 
 class Run:
     def __init__(self):
-        #self.model = keras.models.load_model('complete_program/models/my_model_2_3.h5', compile=False)
+        
         self.record = multiprocessing.Event()
         self.collect_lstm_data = True
         self.stream_queues = []
@@ -31,9 +30,6 @@ class Run:
         for i in range(NUM_CAMERAS):
             self.stream_queues.append(multiprocessing.Queue())
 
-        # self.q_image_1 = multiprocessing.Queue()
-        # self.q_image_2 = multiprocessing.Queue()
-
         self.exit = multiprocessing.Event()
 
         self.keep_running = True
@@ -42,29 +38,26 @@ class Run:
 
         for i in range(NUM_CAMERAS):
             self.stream_images.append(np.zeros((FRAME_SIZE[1],FRAME_SIZE[0],3), np.uint8))
-        
+
+        #  UNCOMMENT     
         self.calibration_points = []
         for i in range(NUM_CAMERAS):
             self.calibration_points.append(self.calibrate_camera(i))
 
     def run(self):
-        # create a list of processes that we want to run at the same time
-        #Create a queue to share data between process
-        
+        # Create a list of processes that we want to run at the same time        
         multiprocess = []
 
-        #Create and start the simulation process
-        # for i in range(NUM_CAMERAS):
-        #     multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[i],i,self.calibration_points[i]]))
-        #     time.sleep(5)
-
+        # UNCOMMENT 
         multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[1],1,self.calibration_points[1]]))
         multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[0],0,self.calibration_points[0]]))
 
-        # multiprocess.append(multiprocessing.Process(None,self.stream_camera_mp,args=[self.stream_queues[1],1,self.calibration_points[1]]))
-        # multiprocess.append(multiprocessing.Process(None,self.stream_camera2_mp,args=[self.stream_queues[0],]))
+        # COMMENT
+        # self.record.set()
+        # multiprocess.append(multiprocessing.Process(None,self.stream_camera2_mp,args=[self.stream_queues[1],]))
 
         # add the robot control process
+        # UNCOMMENT 
         multiprocess.append(multiprocessing.Process(None,self.run_robot))
         
         for p in multiprocess:
