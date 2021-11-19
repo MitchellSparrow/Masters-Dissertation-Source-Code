@@ -14,12 +14,14 @@ class MySFTPClient(paramiko.SFTPClient):
                 # The following if condition just ensures that the model is not copied over each time
                 # The model is quite a large file therefore it takes a while to copy it over
                 print(item)
-                if not (item == "my_model_2_3.h5" or item == "my_model_6.h5" or item == "my_model_10.h5" or item == "my_model_11.h5" or item == "my_model_13.h5"):
+                if not (item == "my_model_2_3.h5" or item == "my_model_18.h5" or item == "my_model_6.h5" or item == "my_model_10.h5" or item == "my_model_15.h5" or item == "lstm_model.h5" or item == "my_model_11.h5" or item == "my_model_13.h5"):
                     self.put(os.path.join(source, item), '%s/%s' % (target, item))
                 
             else:
-                self.mkdir('%s/%s' % (target, item), ignore_existing=True)
-                self.put_dir(os.path.join(source, item), '%s/%s' % (target, item))
+                if not (item == "LSTM_Data_test" or item == "LSTM_Data" or item == "new_data" ):
+                
+                    self.mkdir('%s/%s' % (target, item), ignore_existing=True)
+                    self.put_dir(os.path.join(source, item), '%s/%s' % (target, item))
 
     def mkdir(self, path, mode=511, ignore_existing=False):
         ''' Augments mkdir by adding an option to not fail if the folder exists  '''

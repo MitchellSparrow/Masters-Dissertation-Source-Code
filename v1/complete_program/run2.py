@@ -10,7 +10,7 @@ import uuid
 from tensorflow import keras
 import time
 import multiprocessing
-
+import segmentation_models as sm
 
 class Run:
     def __init__(self):
@@ -18,6 +18,10 @@ class Run:
         self.record = multiprocessing.Event()
         self.collect_lstm_data = True
         self.stream_queues = []
+        self.path_cam = os.getcwd() + "\\new_data\\new_images\\"
+        print(self.path_cam)
+
+        self.preprocess_input = sm.get_preprocessing(BACKBONE)
 
         # recording data 
         self.action = 0
@@ -31,6 +35,8 @@ class Run:
             self.stream_queues.append(multiprocessing.Queue())
 
         self.exit = multiprocessing.Event()
+
+        self.lstm_buffer = []
 
         self.keep_running = True
         self.calibrating = True
@@ -69,24 +75,27 @@ class Run:
         
         # [x.start() for x in multiprocess]
         
-        self.model = keras.models.load_model('models/my_model_10.h5', compile=False)
+        self.model = keras.models.load_model('models/my_model_18.h5', compile=False)
         self.display_masked_images_mp()
         #self.display_images_mp()
+        #self.save_images()
         
 
     def save_images(self):
-        while self.keep_running:
-            cv2.imwrite(os.path.join(self.path_cam, '{}.jpg'.format(str(uuid.uuid1()))), self.stream_images[0])
-            cv2.imwrite(os.path.join(self.path_cam, '{}.jpg'.format(str(uuid.uuid1()))), self.stream_images[1])
+        while not self.exit.is_set():
+            cv_image = np.concatenate((self.stream_queues[0].get(), self.stream_queues[1].get()), axis=1)
+            if cv_image is None:  continue  
 
-            cv_image = np.concatenate((self.stream_images[0], self.stream_images[1]), axis=1)
+            cv2.imwrite(os.path.join(self.path_cam, '{}.jpg'.format(str(uuid.uuid1()))), self.stream_queues[0].get())
+            cv2.imwrite(os.path.join(self.path_cam, '{}.jpg'.format(str(uuid.uuid1()))), self.stream_queues[1].get())
+
             cv2.imshow('Instance Segmentation', cv_image)
 
             cv2.waitKey(1000)
 
             if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
                 cv2.destroyAllWindows()
-                self.keep_running = False
+                self.exit.set()
 
 
     def display_images(self):
@@ -155,6 +164,15 @@ class Run:
                         self.record.clear()
                     else:
                         self.frame_num += 1
+                else:
+                    self.lstm_buffer.append(image_1_result[1].flatten())
+                    if self.frame_num == SEQUENCE_LENGTH - 1:
+                        self.run_lstm_prediction()
+                        self.frame_num = 0
+                        self.record.clear()
+                    else:
+                        self.frame_num += 1
+
 
 
             if cv2.waitKey(1) & 0xFF == ord('q') or cv2.getWindowProperty('Instance Segmentation',4)<1:
@@ -177,8 +195,9 @@ class Run:
 
     def get_masked_image(self, image):
         res = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-        res = np.expand_dims(res, 0)
         start = time.time()
+        res = self.preprocess_input(res)
+        res = np.expand_dims(res, 0)
         prediction = (self.model.predict(res)[0,:,:,0] > SEM_SEG_THRESH).astype(np.uint8)*255
         end = time.time()
         redImg = np.zeros(image.shape, image.dtype)
@@ -273,7 +292,12 @@ class Run:
 
             stream.try_abort()
             cv2.destroyAllWindows()
-            return points
+            return points       
+
+
+    def run_lstm_prediction(self):
+        pass
+
 
 
     def run_robot(self,):
