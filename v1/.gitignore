@@ -12,3 +12,6 @@ complete_program/analysis/
 camera/
 
 microphone/
+
+.*
+!/.gitignore
