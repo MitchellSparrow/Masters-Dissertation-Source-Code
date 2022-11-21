@@ -6,3 +6,9 @@ complete_program/secrets.py
 
 complete_program/LSTM_Data
 complete_program/new_data
+
+complete_program/analysis/
+
+camera/
+
+microphone/

@@ -8,21 +8,6 @@ from globals import *
 from helper import *
 
 
-# import pixellib
-# from pixellib.instance import instance_segmentation
-# import cv2
-
-# from pixellib.instance import custom_segmentation
-
-# segmentation_model = custom_segmentation()
-# segmentation_model.inferConfig(num_classes=1, class_names=["BG", "Object"])
-# segmentation_model.load_model("camera/models/mask_rcnn_model.019-0.155671.h5")
-
-
-#segmentation_model = instance_segmentation(infer_speed="fast")
-# segmentation_model.load_model('camera/models/mask_rcnn_coco.h5')
-
-
 async def async_acquire(port, points):
     with cvb.DeviceFactory.open(os.path.join(cvb.install_path(), "drivers", 'GenICam.vin'), port=port) as device:
         configure_device(device)
@@ -37,9 +22,6 @@ async def async_acquire(port, points):
             if status == cvb.WaitStatus.Ok:
                 image_np = cvb.as_array(image, copy=False)
                 img = transform_image(image_np, points)
-                # find_contours(image_np)
-                # res = segmentation_model.segmentFrame(img, show_bboxes=True)
-                # image_res = res[1]
 
                 cv2.imshow(image_name, cv2.resize(
                     cv2.cvtColor(img, cv2.COLOR_RGB2BGR), FRAME_SIZE))
