@@ -1,6 +1,6 @@
 # Masters Dissertation
 
-The following repository contains all of the source code for my Masters Dissertation. 
+The following repository contains all of the source code for my Masters Dissertation. Navigate to the **v1** folder to view all of the respective code sections.
 
 ![alt text](https://cdn.sanity.io/images/xbn4zmfs/production/d23c8c88963a2ccc85ebf04be82d2096592a9b23-1691x583.png)
 
