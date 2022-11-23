@@ -1,6 +1,6 @@
 # LSTM Model
 
-The following folder contains all of the code used to build and train the U-Net semantic segmentation model.
+The following folder contains all of the code used to build and train the LSTM model.
 
 # Training results
 
