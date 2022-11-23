@@ -52,19 +52,6 @@ def create_model():
     return model
 
 
-# model = Sequential()
-# model.add(LSTM(64, return_sequences=True,
-#                activation='relu', input_shape=(30, 4)))
-# model.add(LSTM(128, return_sequences=True, activation='relu'))
-# model.add(LSTM(64, return_sequences=False, activation='relu'))
-# model.add(Dense(64, activation='relu'))
-# model.add(Dense(32, activation='relu'))
-# model.add(Dense(actions.shape[0], activation='softmax'))
-
-
-# model.compile(optimizer='Adam', loss='categorical_crossentropy',
-#               metrics=['categorical_accuracy'])
-
 best_model = create_model()
 best_accuracy = 0
 
@@ -84,11 +71,6 @@ for train_index, test_index in KFold(n_split, shuffle=True).split(X_train):
         best_model = model
         print('This model performed better')
 
-    #print('Model evaluation ', model.evaluate(x_test, y_test))
-
-# model.fit(X_train, y_train, epochs=300, callbacks=[tb_callback])
-
-# print(model.summary())
 
 print('\n\nBest Model Evaluation:\n\n')
 print(best_model.summary())
